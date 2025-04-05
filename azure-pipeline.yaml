@@ -1,0 +1,36 @@
+trigger:
+  - main
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  imageName: 'weatherapp'
+
+stages:
+- stage: Build
+  jobs:
+  - job: BuildAndPush
+    steps:
+    - task: DockerInstaller@0
+
+    - checkout: self
+
+    - task: Docker@2
+      displayName: Build image
+      inputs:
+        containerRegistry: 'DockerHubConnection'  # Service connection name
+        repository: 'yourdockerhubusername/weatherapp'
+        command: 'buildAndPush'
+        Dockerfile: 'Dockerfile'
+        tags: |
+          latest
+
+- stage: Deploy
+  dependsOn: Build
+  jobs:
+  - job: DeployToMinikube
+    steps:
+    - script: |
+        kubectl apply -f k8s/
+      displayName: Deploy to Minikube
